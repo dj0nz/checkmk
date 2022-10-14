@@ -1,4 +1,4 @@
 ### CheckMK - local checks and plugins
 
-CheckMK local checks and plugins I used once or often.
+Local check scripts, plugins and related stuff I used once or often in my own or in customer environments.
 Use at own risk. :smirk:
