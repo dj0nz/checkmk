@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Skript prüft, ob für jeden Debian Host ein Backup existiert
+# Läuft auf dem Backup-Server
 # djonz Mar 2022
 
 CURL=/usr/bin/curl
