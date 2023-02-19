@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-# Get current ReadyNAS OS version
+# Get current ReadyNAS OS version and write current version to outfile 
+# This is needed by the check-netgear-version.py plugin. 
+# Schedule to run once a day or every few days.
 # dj0Nz Feb 2023
 
 import requests
