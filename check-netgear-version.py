@@ -17,7 +17,7 @@ from cmk.base.plugins.agent_based.agent_based_api.v1 import *
 outfile = '/tmp/readynas.version'
 
 try:
-    f = open(outfile, 'rb')
+    f = open(outfile, 'r')
 except OSError:
     latest = ""
 else:
@@ -29,7 +29,8 @@ def discover_readynas_version(section):
     yield Service()
 
 def check_readynas_version(section):
-    if section == latest:
+    current = section[0][0]
+    if current == latest:
         yield Result(state=State.OK, summary="ReadyNAS OS is up to date")
     elif latest ==  "":
         yield Result(state=State.CRIT, summary="Unable to get online version. Check file/script.")
