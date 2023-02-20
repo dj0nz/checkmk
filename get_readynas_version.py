@@ -17,6 +17,10 @@ response = requests.get(url)
 soup = BeautifulSoup(response.text, 'html.parser')
 latest = soup.find('h1', string=re.compile('Softwareversion.*arm')).text.split()[1]
 
+check = re.match('^\d{1,2}\.\d{1,2}\.\d{1,2}$', latest)
+if not check:
+    latest = ""
+
 f = open(outfile, 'w')
-f.write(latest)
+f.write(latest + '\n')
 f.close()
