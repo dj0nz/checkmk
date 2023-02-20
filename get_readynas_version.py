@@ -18,5 +18,5 @@ soup = BeautifulSoup(response.text, 'html.parser')
 latest = soup.find('h1', string=re.compile('Softwareversion.*arm')).text.split()[1]
 
 f = open(outfile, 'w')
-f.write(latest + '\n')
+f.write(latest)
 f.close()
