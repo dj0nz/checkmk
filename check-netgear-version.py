@@ -15,6 +15,7 @@
 # - Raise warning if software is outdated
 
 import os
+import re
 import time
 import requests
 from html.parser import HTMLParser
@@ -64,6 +65,11 @@ file.close()
 readaynas_versions = versions_list()
 readaynas_versions.feed(html)
 latest = readaynas_versions.version[0]
+
+# Basic syntax checking: We're expecting a specific format...
+check = re.match('^\d{1,2}\.\d{1,2}\.\d{1,2}$', latest)
+if not check:
+    latest = ""
 
 # Delete htmlfile if it's older than numdays
 file_time = os.stat(htmlfile).st_mtime
