@@ -21,7 +21,7 @@ from html.parser import HTMLParser
 from cmk.base.plugins.agent_based.agent_based_api.v1 import *
 
 # The file that holds the downloaded HTML code from the Netgear Support Website
-# Gets deleted every $numdays days
+# Gets refreshed automatically after $numdays days
 htmlfile = '/tmp/netgear-support.html'
 url = 'https://www.netgear.de/support/product/readynas_os_6.aspx#download'
 # Current time needed to determine htmlfile age
