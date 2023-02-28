@@ -9,8 +9,9 @@
 # Version: 2.0
 #
 # Monitor ReadyNAS OS version on a Netgear NAS
-# - Get a list of ReadyNAS OS software versions from Netgear support website
-# - Parse the list and determine current release
+# - Download the Netgear ReadyNAS OS software download page to a local file once a day (configurable)
+# - Parse that file to get a list of ReadyNAS OS software versions
+# - Determine current release (the first in the list)
 # - Do an SNMP query on Netgear NAS devices to determine installed version
 # - Raise warning if software is outdated
 
