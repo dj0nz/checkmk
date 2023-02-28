@@ -22,15 +22,20 @@ import requests
 from html.parser import HTMLParser
 from cmk.base.plugins.agent_based.agent_based_api.v1 import *
 
-# The file that holds the downloaded HTML code from the Netgear Support Website
-# Gets refreshed automatically after $numdays days
-htmlfile = '/tmp/netgear-support.html'
+# URL of the Netgear (Germany) ReadyNAS OS download page
 url = 'https://www.netgear.de/support/product/readynas_os_6.aspx#download'
+
+# The file that holds the downloaded HTML code from the Netgear Support Website
+# Gets refreshed automatically after $numdays days. See "Create htmlfile" section
+htmlfile = '/tmp/netgear-support.html'
+
 # Current time needed to determine htmlfile age
 current_time = time.time()
-# One day in seconds
+
+# One day in seconds, needed for file age calculation
 daysec = 86400
-# Adjust desired file age as needed.
+
+# File age in days. Adjust as needed.
 numdays = 1
 
 # Class to extract list of versions (with current version = first entry) from Netgear Germany download site
