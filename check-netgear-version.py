@@ -5,15 +5,23 @@
 #
 # Author : djonz[at]posteo[punkt]de
 # URL    : https://github.com/dj0nz/checkmk
-# Date   : 2023-02-17
+# Date   : 2023-03-01
 # Version: 2.0
 #
-# Monitor ReadyNAS OS version on a Netgear NAS
+# Purpose: Monitor ReadyNAS OS version on a Netgear NAS
+# 
+# How it works:
 # - Download the Netgear ReadyNAS OS software download page to a local file once a day (configurable)
 # - Parse that file to get a list of ReadyNAS OS software versions
 # - Determine current release (the first in the list)
 # - Do an SNMP query on Netgear NAS devices to determine installed version
 # - Raise warning if software is outdated
+#
+# Adjustable parameters:
+# - You may adjust the numdays var in order to download the download page only once a week or so,
+#   but, for runtime reasons, don't run it too often
+# - If you're not from Germany you might want to adjust the download URL
+# - The htmlfile could also be stored in /var/run or any other directory you like
 
 import os
 import re
@@ -35,7 +43,7 @@ current_time = time.time()
 # One day in seconds, needed for file age calculation
 daysec = 86400
 
-# File age in days. Adjust as needed.
+# File age in days. If html file is older, it gets deleted and downloaded on next run. 
 numdays = 1
 
 # Class to extract list of versions (with current version = first entry) from Netgear Germany download site
@@ -63,9 +71,14 @@ if not os.path.isfile(htmlfile):
         file.close()
 
 # Open existing file and extract Html
-file = open(htmlfile, 'r')
-html = file.read()
-file.close()
+try:
+    file = open(htmlfile, 'r')
+except OSError:
+    latest = ""
+else:
+    with file:
+        html = file.read()
+        file.close()
 
 # Parse current version (first list entry) from htmlfile
 readaynas_versions = versions_list()
