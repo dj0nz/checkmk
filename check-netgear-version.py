@@ -16,6 +16,7 @@
 # - Determine current release (the first in the list)
 # - Do an SNMP query on Netgear NAS devices to determine installed version
 # - Raise warning if software is outdated
+# - Error states should self-heal. If not, check Netgear support site contents ("url")
 #
 # Adjustable parameters:
 # - You may adjust the numdays var in order to download the download page only once a week or so,
@@ -79,21 +80,27 @@ else:
     with file:
         html = file.read()
         file.close()
-
-# Parse current version (first list entry) from htmlfile
-readaynas_versions = versions_list()
-readaynas_versions.feed(html)
-latest = readaynas_versions.version[0]
-
-# Basic syntax checking: We're expecting a specific format...
-check = re.match('^\d{1,2}\.\d{1,2}\.\d{1,2}$', latest)
-if not check:
-    latest = ""
-
-# Delete htmlfile if it's older than numdays
-file_time = os.stat(htmlfile).st_mtime
-if(file_time < current_time -daysec*numdays):
-    os.remove(htmlfile)
+    # Check if html contains expected Netgear contents
+    title_re='<title.*?>(ReadyNAS.+?)</title>'
+    pattern=re.compile(title_re)
+    titles=re.findall(pattern,html)
+    # Only run parser if content meets expectations
+    if titles:
+        # Parse current version (first list entry) from htmlfile
+        readaynas_versions = versions_list()
+        readaynas_versions.feed(html)
+        latest = readaynas_versions.version[0]
+        # Basic syntax checking: We're expecting a specific format...
+        check = re.match('^\d{1,2}\.\d{1,2}\.\d{1,2}$', latest)
+        if not check:
+            latest = ""
+        # Delete htmlfile if it's older than numdays
+        file_time = os.stat(htmlfile).st_mtime
+        if(file_time < current_time -daysec*numdays):
+            os.remove(htmlfile)
+    else:
+        latest = ""
+        os.remove(htmlfile)
 
 # Service discovery function
 def discover_readynas_version(section):
@@ -105,7 +112,7 @@ def check_readynas_version(section):
     if current == latest:
         yield Result(state=State.OK, summary="ReadyNAS OS is up to date")
     elif latest ==  "":
-        yield Result(state=State.CRIT, summary="Unable to get online version. Check file/script.")
+        yield Result(state=State.CRIT, summary="Unable to get online version.")
     else:
         yield Result(state=State.WARN, summary="ReadyNAS OS upgrade available")
 
