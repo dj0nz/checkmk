@@ -39,28 +39,16 @@ url = 'https://www.netgear.de/support/product/readynas_os_6.aspx#download'
 # Netgear NAS architecture. Can be arm or x86
 arch = 'arm'
 
-# Regex for identifying Netgear ReadyNAS OS support site
-site_identifier='<title.*?>(ReadyNAS.+?)</title>'
-
-# Regex for matching the headlines that contain version numbers
-heading_identifier = '<h1.*?>(Softwareversion.+?' +arch +'.+?)</h1>'
-
 # The file that holds the downloaded HTML code from the Netgear Support Website
 # Gets refreshed automatically after $numdays days. See "Create htmlfile" section
 htmlfile = '/tmp/netgear-support.html'
-
-# Current time needed to determine htmlfile age
-current_time = time.time()
-
-# One day in seconds, needed for file age calculation
-daysec = 86400
 
 # File age in days. If html file is older, it gets deleted and downloaded on next run. 
 numdays = 1
 
 # Function returns latest version number
 def readynas_versions(html_input):
-    pattern = re.compile(heading_identifier)
+    pattern = re.compile('<h1.*?>(Softwareversion.+?' +arch +'.+?)</h1>')
     headings=re.search(pattern,html_input)
     if headings:
         return headings[0].split()[1]
@@ -84,7 +72,7 @@ else:
         html = file.read()
         file.close()
     # Check if html contains expected Netgear contents
-    pattern=re.compile(site_identifier)
+    pattern=re.compile('<title.*?>(ReadyNAS.+?)</title>')
     titles=re.search(pattern,html)
     # Only run parser if it's a ReadyNAS page
     if titles:
@@ -97,8 +85,9 @@ else:
             os.remove(htmlfile)
         # Delete htmlfile if it's older than numdays
         if os.path.isfile(htmlfile):
+            current_time = time.time()
             file_time = os.stat(htmlfile).st_mtime
-            if(file_time < current_time -daysec*numdays):
+            if(file_time < current_time -86400*numdays):
                 os.remove(htmlfile)
     else:
         latest = ""
