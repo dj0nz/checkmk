@@ -85,7 +85,7 @@ else:
         file.close()
     # Check if html contains expected Netgear contents
     pattern=re.compile(site_identifier)
-    titles=re.findall(pattern,html)
+    titles=re.search(pattern,html)
     # Only run parser if it's a ReadyNAS page
     if titles:
         # Parse current version (first list entry) from htmlfile
