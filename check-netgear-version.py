@@ -31,14 +31,19 @@ import os
 import re
 import time
 import requests
-from html.parser import HTMLParser
 from cmk.base.plugins.agent_based.agent_based_api.v1 import *
 
 # URL of the Netgear (Germany) ReadyNAS OS download page
 url = 'https://www.netgear.de/support/product/readynas_os_6.aspx#download'
 
+# Netgear NAS architecture. Can be arm or x86
+arch = 'arm'
+
 # Regex for identifying Netgear ReadyNAS OS support site
 site_identifier='<title.*?>(ReadyNAS.+?)</title>'
+
+# Regex for matching the headlines that contain version numbers
+heading_identifier = '<h1.*?>(Softwareversion.+?' +arch +'.+?)</h1>'
 
 # The file that holds the downloaded HTML code from the Netgear Support Website
 # Gets refreshed automatically after $numdays days. See "Create htmlfile" section
@@ -53,22 +58,14 @@ daysec = 86400
 # File age in days. If html file is older, it gets deleted and downloaded on next run. 
 numdays = 1
 
-# Class to extract list of versions (with current version = first entry) from Netgear Germany download site
-# Thanks to Robin David (https://gist.github.com/RobinDavid/9196709) for the class logic
-class versions_list(HTMLParser):
-    head = False
-    version = list()
-    def handle_starttag(self, tag, attrs):
-        if tag == 'h1':
-            self.head = True
-    def handle_data(self, data):
-        if self.head:
-            if data.startswith('Softwareversion'):
-                # You may also check platform (x86/arm), which is in [2]
-                self.version.append(data.split()[1])
-    def handle_endtag(self, tag):
-        if tag =='h1':
-            self.head = False
+# Function returns latest version number
+def readynas_versions(html_input):
+    pattern = re.compile(heading_identifier)
+    headings=re.search(pattern,html_input)
+    if headings:
+        return headings[0].split()[1]
+    else:
+        return ''
 
 # Create htmlfile if it isn't there any more
 if not os.path.isfile(htmlfile):
@@ -92,23 +89,17 @@ else:
     # Only run parser if it's a ReadyNAS page
     if titles:
         # Parse current version (first list entry) from htmlfile
-        readaynas_versions = versions_list()
-        readaynas_versions.feed(html)
-        if readaynas_versions.version:
-            latest = readaynas_versions.version[0]
-            # Basic syntax checking: We're expecting a specific format...
-            check = re.match('^\d{1,2}\.\d{1,2}\.\d{1,2}$', latest)
-            if not check:
-                latest = ""
-                os.remove(htmlfile)
-            # Delete htmlfile if it's older than numdays
-            if os.path.isfile(htmlfile):
-                file_time = os.stat(htmlfile).st_mtime
-                if(file_time < current_time -daysec*numdays):
-                    os.remove(htmlfile)
-        else:
+        latest = readynas_versions(html)
+        # Basic syntax checking: We're expecting a specific format...
+        check = re.match('^\d{1,2}\.\d{1,2}\.\d{1,2}$', latest)
+        if not check:
             latest = ""
             os.remove(htmlfile)
+        # Delete htmlfile if it's older than numdays
+        if os.path.isfile(htmlfile):
+            file_time = os.stat(htmlfile).st_mtime
+            if(file_time < current_time -daysec*numdays):
+                os.remove(htmlfile)
     else:
         latest = ""
         os.remove(htmlfile)
