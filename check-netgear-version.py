@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# License: GNU General Public License v2
+# License: The unlicense. See repo.
 #
 # Author : djonz[at]posteo[punkt]de
 # URL    : https://github.com/dj0nz/checkmk
@@ -10,13 +10,16 @@
 #
 # Purpose: Monitor ReadyNAS OS version on a Netgear NAS
 # 
+# Install:
+# - copy to /omd/sites/<site>/local/lib/python3/cmk/base/plugins/agent_based and chmod 700
+#
 # How it works:
 # - Download the Netgear ReadyNAS OS software download page to a local file once a day (configurable)
 # - Parse that file to get a list of ReadyNAS OS software versions
 # - Determine current release (the first in the list)
 # - Do an SNMP query on Netgear NAS devices to determine installed version
 # - Raise warning if software is outdated
-# - Error states should self-heal. If not, check Netgear support site contents ("url")
+# - Error states should self-heal. If not, check Netgear support site contents
 #
 # Adjustable parameters:
 # - You may adjust the numdays var in order to download the download page only once a week or so,
@@ -33,6 +36,9 @@ from cmk.base.plugins.agent_based.agent_based_api.v1 import *
 
 # URL of the Netgear (Germany) ReadyNAS OS download page
 url = 'https://www.netgear.de/support/product/readynas_os_6.aspx#download'
+
+# Regex for identifying Netgear ReadyNAS OS support site
+site_identifier='<title.*?>(ReadyNAS.+?)</title>'
 
 # The file that holds the downloaded HTML code from the Netgear Support Website
 # Gets refreshed automatically after $numdays days. See "Create htmlfile" section
@@ -71,7 +77,7 @@ if not os.path.isfile(htmlfile):
         file.write(response.text)
         file.close()
 
-# Open existing file and extract Html
+# Open existing file and extract html
 try:
     file = open(htmlfile, 'r')
 except OSError:
@@ -81,22 +87,27 @@ else:
         html = file.read()
         file.close()
     # Check if html contains expected Netgear contents
-    title_re='<title.*?>(ReadyNAS.+?)</title>'
-    pattern=re.compile(title_re)
+    pattern=re.compile(site_identifier)
     titles=re.findall(pattern,html)
-    # Only run parser if content meets expectations
+    # Only run parser if it's a ReadyNAS page
     if titles:
         # Parse current version (first list entry) from htmlfile
         readaynas_versions = versions_list()
         readaynas_versions.feed(html)
-        latest = readaynas_versions.version[0]
-        # Basic syntax checking: We're expecting a specific format...
-        check = re.match('^\d{1,2}\.\d{1,2}\.\d{1,2}$', latest)
-        if not check:
+        if readaynas_versions.version:
+            latest = readaynas_versions.version[0]
+            # Basic syntax checking: We're expecting a specific format...
+            check = re.match('^\d{1,2}\.\d{1,2}\.\d{1,2}$', latest)
+            if not check:
+                latest = ""
+                os.remove(htmlfile)
+            # Delete htmlfile if it's older than numdays
+            if os.path.isfile(htmlfile):
+                file_time = os.stat(htmlfile).st_mtime
+                if(file_time < current_time -daysec*numdays):
+                    os.remove(htmlfile)
+        else:
             latest = ""
-        # Delete htmlfile if it's older than numdays
-        file_time = os.stat(htmlfile).st_mtime
-        if(file_time < current_time -daysec*numdays):
             os.remove(htmlfile)
     else:
         latest = ""
