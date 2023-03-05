@@ -12,6 +12,7 @@
 # 
 # Install:
 # - copy to /omd/sites/<site>/local/lib/python3/cmk/base/plugins/agent_based and chmod 700
+# - Of course SNMP access to your NAS should already be configured in CheckMK
 #
 # How it works:
 # - Download the Netgear ReadyNAS OS software download page to a local file once a day (configurable)
