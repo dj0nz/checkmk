@@ -13,3 +13,6 @@ Local check that checks if a reboot is required after an upgrade.
 #### [check-netgear-version.py](check-netgear-version.py)
 Checkmk plugin to check OS version on a Netgear NAS using snmp and compare to the latest version available at Netgear support website.
 
+#### [check_dhcp_answer.sh](check_dhcp_answer.sh)
+Local dhcp server check that validates the dhcp server answer to a dhcpdiscover request.
+
