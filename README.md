@@ -16,6 +16,6 @@ Checkmk plugin to check OS version on a Netgear NAS using snmp and compare to th
 #### [check_dhcp_answer.sh](check_dhcp_answer.sh)
 Local dhcp server check that validates the dhcp server answer to a dhcpdiscover request.
 
-#### [check_routeros_version.sh(check_routeros_version.sh)]
+#### [check_routeros_version.sh](check_routeros_version.sh)
 Nagios plugin to check current version and pending updates on a Mikrotik RouterOS device
 
