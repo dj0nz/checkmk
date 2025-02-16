@@ -19,3 +19,6 @@ Local dhcp server check that validates the dhcp server answer to a dhcpdiscover 
 #### [check_routeros_version.sh](check_routeros_version.sh)
 Nagios plugin to check current version and pending updates on a Mikrotik RouterOS device
 
+#### [backbox-backup-status.sh](backbox-backup-status.sh)
+Local check for checking backup status on a Backbox Server
+
