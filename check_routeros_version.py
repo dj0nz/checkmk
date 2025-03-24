@@ -4,14 +4,19 @@
 # 
 # Copy to /omd/sites/$OMD_SITE/local/lib/nagios/plugins
 # Activate in Other Services -> Nagios Plugins
+#
+# Dependencies: To authenticate the requests, a .netrc file ('auth_file') is needed
+# See https://everything.curl.dev/usingcurl/netrc.html for format definition. The API user
+# must be defined on the router and DONT use admin, a readonly user is sufficient here.
 # 
-# dj0Nz Mar 2025
+# dj0Nz [djonz@posteo.de] Mar 2025
+# License: https://unlicense.org/
 
 import os, requests, json, netrc, re, sys, socket
 
-# next two lines needed to suppress warnings if self signed certificates are used
-# from urllib3.exceptions import InsecureRequestWarning
-# requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+# next two lines needed to suppress warnings if self signed certificates are used (or expired or missing SANs ;))
+from urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 
 site = os.environ['OMD_SITE']
 auth_file = '/omd/sites/' + site + '/.netrc'
