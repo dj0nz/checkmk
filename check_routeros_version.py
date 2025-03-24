@@ -9,8 +9,8 @@
 # See https://everything.curl.dev/usingcurl/netrc.html for format definition. 
 #
 # The API user must be defined on the router and DONT USE ADMIN. Unfortunately, a readonly user 
-# is not sufficient. Create a group with read + write + policy + api + rest-api permissions, then add a 
-# dedicated api user, restrict source address, set 1 minute inactivity timeout and inactivity policy to logout.
+# is not sufficient. Create a user group with read + write + policy + api + rest-api permissions, then add a 
+# dedicated api user to that group, restrict source address, set 1 minute inactivity timeout and inactivity policy to logout.
 # 
 # dj0Nz [djonz@posteo.de] Mar 2025
 # License: https://unlicense.org/
