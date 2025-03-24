@@ -10,11 +10,11 @@
 # but the output is ... hm ... okay it says "got answer" or not that's all. :-/
 # 
 # prerequisites: 
-# - another linux host in the network where the dhcp server is listening 
-#   for requests (can be the monitoring server itself)
+# - a dhcp server
+# - a second (linux) server to issue the dhcp discover message
 # - ssh pubkey auth from this machine to the dhcp server
 # - locally installed nmap on this machine
-# - schedule a script cronjob (every 10 minutes or so) with the following commands:
+# - schedule a script (cron, every few minutes) with the following commands:
 #   nmap -sU -p67 --script dhcp-discover [dhcp server address] > /tmp/dhcp-check
 #   scp -q /tmp/dhcp-check [dhcp server]:/tmp/dhcp-check
 #
