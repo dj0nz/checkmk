@@ -61,9 +61,8 @@ if not port_open(input,443):
 command = 'system/package/update/check-for-updates'
 response = api_call(input,command)
 resp_code = str(response[0])
-# interesting part is in second entry
-data = response[1][1]
 if resp_code == '200':
+    data = response[1][1]
     status = data['status']
     already = re.findall('already', status)
     try:
