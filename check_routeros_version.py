@@ -8,7 +8,7 @@
 # Dependencies: To authenticate the requests, a .netrc file ('auth_file') is needed
 # See https://everything.curl.dev/usingcurl/netrc.html for format definition. 
 #
-# Also, an API user must be defined on the router and DONT USE ADMIN. Unfortunately, a readonly user 
+# The API user must be defined on the router and DONT USE ADMIN. Unfortunately, a readonly user 
 # is not sufficient. Create a group with read + write + policy + api + rest-api permissions, then add a 
 # dedicated api user, restrict source address, set 1 minute inactivity timeout and inactivity policy to logout.
 # 
