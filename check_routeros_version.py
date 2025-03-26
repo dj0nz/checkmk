@@ -11,6 +11,7 @@
 # The API user must be defined on the router and DONT USE ADMIN. Unfortunately, a readonly user 
 # is not sufficient. Create a user group with read + write + policy + api + rest-api permissions, then add a 
 # dedicated api user to that group, restrict source address, set 1 minute inactivity timeout and inactivity policy to logout.
+# The latter is needed because api users dont get logged off automatically after requests!
 # 
 # dj0Nz [djonz@posteo.de] Mar 2025
 # License: https://unlicense.org/
