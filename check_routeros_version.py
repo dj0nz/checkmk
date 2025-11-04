@@ -4,6 +4,7 @@
 # 
 # Copy to /omd/sites/$OMD_SITE/local/lib/nagios/plugins
 # Activate in Other Services -> Nagios Plugins
+# Adjust check interval to anything other than the default 60 seconds
 #
 # Dependencies: To authenticate the requests, a .netrc file ('auth_file') is needed
 # See https://everything.curl.dev/usingcurl/netrc.html for format definition. 
