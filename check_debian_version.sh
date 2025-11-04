@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # CheckMK local check for Debian version
-# Returns green if the version is current (stable), yellow on oldstable and red in any other case
+# Returns green if the version is current (stable or oldstable), yellow on oldoldstable (time to update!) and red in any other case
 # dj0Nz Dec 2021
 
 # extract version number, dist codename and dist branch from apt policy
@@ -11,12 +11,15 @@ VERSION="${RINFO[0]}"
 DISTR="${RINFO[1]}"
 CODENAME=$(echo -e ${RINFO[2]})
 
-# set state according to dist branch: 0=OK (stable), 1=WARN (oldstable), 2=CRIT (all others)
+# set state according to dist branch: 0=OK (stable/oldstable), 1=WARN (oldoldstable), 2=CRIT (all others)
 case $DISTR in
    stable)
       RES=0
       ;;
    oldstable)
+      RES=0
+      ;;
+   oldoldstable)
       RES=1
       ;;
    *)
