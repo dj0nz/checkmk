@@ -16,3 +16,10 @@ Nagios plugin to check current version and pending updates on a Mikrotik RouterO
 #### [backbox-backup-status.sh](backbox-backup-status.sh)
 Local check for checking backup status on a Backbox Server
 
+#### [nc-ver-check.sh](nc-ver-check.sh)
+Script to check if latest Nextcloud version is installed locally. Output goes to state file which is read and interpreted by a local CheckMK check.
+
+
+
+
+
