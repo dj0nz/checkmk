@@ -4,65 +4,78 @@
 #
 # This script runs as local check on a Backbox server with installed CheckMK agent.
 # It issues an API request on itself and returns "Ok" if all backups were successful.
-# It will not run if token is abount to expire or file format is invalid.
-# 
-# Preparation:
-# Add API token in Backbox server UI (Authentication -> API Token). Set API token lifetime
-# according to your local API security guidelines (max. 180 days). Login to Backbox server, 
-# elevate privileges, create token file ($TOKEN_FILE) in CheckMK agent home and chmod 600. 
-# API token file format: <user>:<token>:<expires>, one per line. 
-# Expires in epoch time, you may use https://www.epochconverter.com/ to calculate it from toke expiry date.
 #
-# Installation:
-# Copy to /usr/lib/check_mk_agent/local/ and chmod 700.
+# Failure conditions covered:
+# - Return warning if successDevices not equal totalDevices
+# - Return error if 
+#     - successDevices = 0 
+#     - API request not successful
+#     - Password file not found
+# 
+# Preparation (Backbox Web UI):
+# - Create restricted user role with all permissions removed (Access to Dashboard/Status can't be removed)
+# - Create API user and assign the restricted role, configure strong password (Diceware is your friend)
+#
+# Installation (via Secure Shell):
+# - Copy script to /usr/lib/check_mk_agent/local/ and chmod 700
+# - Create "hidden" password file in /var/lib/cmk-agent (see $PASSWORD_FILE below) and chmod 600
+# - The password file should contain the API user's password only 
+# - Wait for Service Discovery to detect the new check or discover manually
 #
 # Product documentation:
 # Backbox: https://support.backbox.com/s/documentation
 # CheckMK: https://docs.checkmk.com/latest/en/index.html
 #
-# API documentation:
-# https://<Backbox Server>/rest/data/swagger-ui.html
+# Backbox API documentation:
+# https://$BACKBOX/rest/data/swagger-ui.html
 #
-# dj0Nz Nov 2024
-
-# The user used for issuing the API request
-API_USER="mon"
-#  The token file must be readable by CheckMK agent ONLY!
-TOKEN_FILE="/var/lib/cmk-agent/.token"
-# Reamining token lifetime - Issue warning and exit if token expires in less than $REMAIN days
-REMAIN=7
-END_DATE=$(($(date +%s)+86400*$REMAIN))
-
-# Grab token from file
-TOKEN=$(cat $TOKEN_FILE | grep $API_USER | cut -d ':' -f2)
-EXPIRES=$(cat $TOKEN_FILE | grep $API_USER | cut -d ':' -f3)
-
-# Check if the expire time is in valid format
-if [[ $(date -d "@$EXPIRES" 2>&1 | grep invalid) ]]; then
-    echo "2 \"Backbox Backups\" - Token expire time is invalid."
-    exit 1
-else
-    # Check if token is about to expire
-    if [[ $EXPIRES < $END_DATE ]]; then
-        echo "1 \"Backbox Backups\" - Token expires $(date -d "@$EXPIRES"). Renew now!"
-        exit 1
-    fi
-fi
+# dj0Nz Feb 2026
 
 # Backbox server to query
-SERVER=192.0.2.1
+BACKBOX=192.0.2.21
 
-# API command
+# Output files
+OUTPUT=/tmp/backup_status.json
+HEADER=/tmp/header.txt
+
+# API User
+USERNAME="api"
+
+# Get API password
+PASSWORD_FILE=/var/lib/cmk-agent/.apipw
+if [[ -f $PASSWORD_FILE ]]; then
+    PASSWORD=$(cat $PASSWORD_FILE)
+else
+    echo "2 \"Backbox Backups\" - Missing login credentials!"
+    exit 1
+fi
+
+# Get API token: Issue login and store response header. Session token is in "AUTH"
+curl -s -D $HEADER "https://$BACKBOX/rest/data/token/api/login?username={$USERNAME}&password={$PASSWORD}" -k -o /dev/null
+
+# Check response header. Anything other than HTTP/1.1 200 OK in the first line is an error
+RESPONSE=$(cat $HEADER | head -1 | awk '{print $2}')
+if [[ ! "$RESPONSE" == "200" ]]; then
+    echo "2 \"Backbox Backups\" - API login not successful (Http code: $RESPONSE)!"
+    exit 1
+fi
+
+# Extract auth token from response header
+TOKEN=$(cat $HEADER | grep AUTH | awk '{print $2}')
+rm $HEADER
+
+# Get json structure containing overall backup status
 COMMAND="dashboard/backupStatus"
-# Initial Value for successful backups
-SUCCESS=0
+RESPONSE=$(curl -o $OUTPUT -w "%{http_code}\n" -X GET -k --silent -H "Accept: application/json" -H "AUTH:$TOKEN" "https://$BACKBOX/rest/data/token/api/$COMMAND")
 
-# Get json status
-STATUS=$(curl -X GET -k --silent -H "Accept: application/json" -H "AUTH:$TOKEN" "https://$SERVER/rest/data/token/api/$COMMAND")
+if [[ ! "$RESPONSE" == "200" ]]; then
+    echo "2 \"Backbox Backups\" - API request not successful (Http code: $RESPONSE)!"
+    exit 1
+fi
 
 # Grab total and success from json
-SUCCESS=$(echo $STATUS | jq '.[]|."successDevices"')
-TOTAL=$(echo $STATUS | jq '.[]|."totalDevices"')
+SUCCESS=$(jq '.[]|."successDevices"' $OUTPUT)
+TOTAL=$(jq '.[]|."totalDevices"' $OUTPUT)
 
 # Output section
 if [[ $SUCCESS -eq 0 ]]; then
