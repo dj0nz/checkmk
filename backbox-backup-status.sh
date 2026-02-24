@@ -31,18 +31,23 @@
 #
 # dj0Nz Feb 2026
 
+####
+# Config section
+
 # Backbox server to query
 BACKBOX=192.0.2.21
-
 # Output files
 OUTPUT=/tmp/backup_status.json
 HEADER=/tmp/header.txt
-
 # API User
 USERNAME="api"
+# File containing API user's password
+PASSWORD_FILE=/var/lib/cmk-agent/.apipw
+
+# Config section end
+####
 
 # Get API password
-PASSWORD_FILE=/var/lib/cmk-agent/.apipw
 if [[ -f $PASSWORD_FILE ]]; then
     PASSWORD=$(cat $PASSWORD_FILE)
 else
