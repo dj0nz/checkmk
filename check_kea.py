@@ -9,6 +9,7 @@
 #
 # So this check is divided in two parts:
 # - This part runs scheduled every 5 minutes and writes its output to a state file
+#   crontab: */5 * * * * /usr/local/bin/check_kea_dhcp.py [dhcp.ser.ver.ip] > /var/run/kea.state
 # - The second part is a simple bash script in the Nagios plugin directory
 #   See check_kea.sh, same repo
 # 
