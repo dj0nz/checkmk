@@ -10,6 +10,9 @@ Local check which runs on a Debian system and checks if OS version is "current".
 #### [check_kea.py](check_kea.py)
 Python script that checks a given KEA DHCP server by issuing an DHCPINFORM request. Can't be used as plugin directly, but...
 
+#### [check_kea.sh](check_kea.sh)
+...the check_kea.sh is a Nagios plugin that reagds the check_kea.py output file and reports its status to CheckMK
+
 #### [check_routeros_version.py](check_routeros_version.py)
 Nagios plugin to check current version and pending updates on a Mikrotik RouterOS device
 
