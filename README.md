@@ -5,7 +5,7 @@ Checkmk plugins and related stuff.
 Local check which runs on a Debian system and checks if OS version is "current".
 
 #### [check-netgear-version.py](check-netgear-version.py)
-Checkmk plugin to check OS version on a Netgear NAS using snmp and compare to the latest version available at Netgear support website.
+**DEPRECATED** Checkmk plugin to check OS version on a Netgear NAS using snmp and compare to the latest version available at Netgear support website.
 
 #### [check_kea.py](check_kea.py)
 Python script that checks a given KEA DHCP server by issuing an DHCPINFORM request. Can't be used as plugin directly, but...
