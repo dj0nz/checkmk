@@ -11,7 +11,26 @@
 # - This part runs scheduled every 5 minutes and writes its output to a state file
 # - The second part is a simple bash script in the Nagios plugin directory
 #   See check_kea.sh, same repo
-#      
+# 
+# Concerning KEA API security:
+# ----------------------------
+# Http requests on port 8000 are used by a KEA cluster to exhange state information
+# and issue commands. Up to now, the security measure mentioned in the docs is encrypting the connections. 
+#
+# If you run KEA in a production environment, you should make sure, that your cluster members
+# are in the same subnet and access is restricted by a local firewall and connctions are tls encrypted. 
+
+# Sample nftables rules:
+# 
+#     chain input {
+#        type filter hook input priority 0; policy accept;
+#        ip saddr { primary_member, secondary_member, monitoring_host } tcp dport 8000 accept
+#        iif lo tcp dport 8000 accept
+#        tcp dport 8000 drop
+#    }
+#
+# In this example, plantext http is used, which is okay (for me) because it's a dedicated network protected by firewalls 
+# 
 # dj0Nz Feb 2026
 
 import sys, time, ipaddress, requests, json
