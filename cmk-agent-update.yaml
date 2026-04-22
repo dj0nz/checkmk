@@ -19,7 +19,7 @@
 
     - name: Extract .deb file name
       ansible.builtin.set_fact:
-      agent_filename: "{{ directory_index.content | regex_search('([\\w.-]+\\.deb)') }}"
+        agent_filename: "{{ directory_index.content | regex_search('([\\w.-]+\\.deb)') }}"
       run_once: true
 
     - name: Check if file name found
