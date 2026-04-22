@@ -22,6 +22,9 @@ Local check for checking backup status on a Backbox Server
 #### [nc-ver-check.sh](nc-ver-check.sh)
 Script to check if latest Nextcloud version is installed locally. Output goes to state file which is read and interpreted by a local CheckMK check.
 
+#### [cmk-agent-update.yaml](cmk-agent-update.yaml)
+Ansible playbook to update CheckMK Agent on Debian hosts monitored by given CheckMK instance 
+
 
 
 
