@@ -1,0 +1,67 @@
+---
+- name: Update CheckMK agent on Debian hosts
+  hosts: all
+  vars:
+    cmk_server: "cmk-server"
+    cmk_site: "cmk-site"
+    cmk_agents_url: "http://{{ cmk_server }}/{{ cmk_site }}/check_mk/agents"
+  tasks:
+    - name: Get index from CheckMK server
+      ansible.builtin.uri:
+        url: "{{ cmk_agents_url }}/"
+        return_content: yes
+      register: directory_index
+      delegate_to: localhost
+      run_once: true
+
+    - name: Extract .deb file name
+      ansible.builtin.set_fact:
+        # Look for first occurence of .deb in output
+        agent_filename: "{{ directory_index.content | regex_search('([\\w.-]+\\.deb)') }}"
+      run_once: true
+
+    - name: Check if file name found
+      ansible.builtin.fail:
+        msg: "No .deb file in directory!"
+      when: agent_filename is none or agent_filename | length == 0
+      run_once: true
+
+    - name: Download new agent to controller
+      ansible.builtin.get_url:
+        url: "{{ cmk_agents_url }}/{{ agent_filename }}"
+        dest: "/tmp/{{ agent_filename }}"
+        mode: '0644'
+      delegate_to: localhost
+      run_once: true
+
+    - name: Extract agent version from filename
+      ansible.builtin.set_fact:
+        # check-mk-agent_2.3.0p10-1_all.deb -> 2.3.0p10-1
+        agent_version: "{{ agent_filename | regex_search('_(.+)_all\\.deb', '\\1') | first }}"
+      run_once: true
+
+    - name: Query installed agent version
+      ansible.builtin.command: dpkg-query -W -f='${Version}' check-mk-agent
+      register: installed_agent
+      changed_when: false
+      failed_when: false
+
+    - name: Skip host if already at target version
+      ansible.builtin.meta: end_host
+      when: installed_agent.stdout == agent_version
+
+    - name: Distribute agent package to targets
+      ansible.builtin.copy:
+        src: "/tmp/{{ agent_filename }}"
+        dest: "/tmp/{{ agent_filename }}"
+        mode: '0644'
+
+    - name: Install new agent
+      ansible.builtin.apt:
+        deb: "/tmp/{{ agent_filename }}"
+        state: present
+
+    - name: Remove staged .deb on target
+      ansible.builtin.file:
+        path: "/tmp/{{ agent_filename }}"
+        state: absent
