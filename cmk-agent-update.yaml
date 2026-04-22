@@ -1,6 +1,7 @@
 ---
 - name: Update CheckMK agent on Debian hosts
   hosts: all
+  become: yes
   vars:
     cmk_server: "cmk-host"
     cmk_site: "site-name"
