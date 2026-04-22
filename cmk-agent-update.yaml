@@ -17,8 +17,7 @@
 
     - name: Extract .deb file name
       ansible.builtin.set_fact:
-        # Look for first occurence of .deb in output
-        agent_filename: "{{ directory_index.content | regex_search('([\\w.-]+\\.deb)') }}"
+      agent_filename: "{{ directory_index.content | regex_search('([\\w.-]+\\.deb)') }}"
       run_once: true
 
     - name: Check if file name found
@@ -37,7 +36,6 @@
 
     - name: Extract agent version from filename
       ansible.builtin.set_fact:
-        # check-mk-agent_2.3.0p10-1_all.deb -> 2.3.0p10-1
         agent_version: "{{ agent_filename | regex_search('_(.+)_all\\.deb', '\\1') | first }}"
       run_once: true
 
