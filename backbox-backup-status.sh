@@ -6,20 +6,19 @@
 # It issues an API request on itself and returns "Ok" if all backups were successful.
 #
 # Failure conditions covered:
-# - Return warning if successDevices not equal totalDevices
-# - Return error if 
-#     - successDevices = 0 
-#     - API request not successful
-#     - Password file not found
-# 
+# - Warning if successDevices != totalDevices
+# - Warning if no devices configured (totalDevices = 0)
+# - Critical if successDevices = 0 with devices present
+# - Critical on API errors, missing password file, or unparseable response
+#
 # Preparation (Backbox Web UI):
-# - Create restricted user role with all permissions removed (Access to Dashboard/Status can't be removed)
-# - Create API user and assign the restricted role, configure strong password (Diceware is your friend)
+# - Create restricted user role with all permissions removed (Dashboard/Status remains)
+# - Create API user, assign the restricted role, set a strong password
 #
 # Installation (via Secure Shell):
 # - Copy script to /usr/lib/check_mk_agent/local/ and chmod 700
-# - Create "hidden" password file in /var/lib/cmk-agent (see $PASSWORD_FILE below) and chmod 600
-# - The password file should contain the API user's password only 
+# - Create password file in /var/lib/cmk-agent (see PASSWORD_FILE below), chmod 600
+# - Password file contains the API user's password only
 # - Wait for Service Discovery to detect the new check or discover manually
 #
 # Product documentation:
@@ -29,66 +28,76 @@
 # Backbox API documentation:
 # https://$BACKBOX/rest/data/swagger-ui.html
 #
+# Note: This script uses Backbox' Internal API which is deprecated by the
+# vendor. Reachitecture required once the replacement API is published.
+#
 # dj0Nz Feb 2026
-
+# Revised Jul 2026
 ####
+
 # Config section
-
-# Backbox server to query
 BACKBOX=192.0.2.21
-# Output files
-OUTPUT=/tmp/backup_status.json
-HEADER=/tmp/header.txt
-# API User
 USERNAME="api"
-# File containing API user's password
 PASSWORD_FILE=/var/lib/cmk-agent/.apipw
-
+SERVICE='"Backbox Backups"'
+CURL_TIMEOUT=10
 # Config section end
 ####
 
-# Get API password
-if [[ -f $PASSWORD_FILE ]]; then
-    PASSWORD=$(cat $PASSWORD_FILE)
-else
-    echo "2 \"Backbox Backups\" - Missing login credentials!"
+# Use mktemp; ensure cleanup on every exit path (header file briefly holds AUTH token)
+HEADER=$(mktemp) || { echo "2 $SERVICE - Cannot create temp file"; exit 1; }
+OUTPUT=$(mktemp) || { echo "2 $SERVICE - Cannot create temp file"; exit 1; }
+trap 'rm -f "$HEADER" "$OUTPUT"' EXIT
+
+# Read API password, strip trailing newline if present
+if [[ ! -r "$PASSWORD_FILE" ]]; then
+    echo "2 $SERVICE - Missing or unreadable login credentials!"
+    exit 1
+fi
+PASSWORD=$(<"$PASSWORD_FILE")
+PASSWORD="${PASSWORD%$'\n'}"
+
+# Login: get HTTP status via -w, store headers (AUTH token is in there)
+LOGIN_CODE=$(curl -s -k --max-time "$CURL_TIMEOUT" -D "$HEADER" -o /dev/null -w '%{http_code}' \
+    "https://$BACKBOX/rest/data/token/api/login?username=${USERNAME}&password=${PASSWORD}")
+
+if [[ "$LOGIN_CODE" != "200" ]]; then
+    echo "2 $SERVICE - API login not successful (HTTP code: $LOGIN_CODE)!"
     exit 1
 fi
 
-# Get API token: Issue login and store response header. Session token is in "AUTH"
-curl -s -D $HEADER "https://$BACKBOX/rest/data/token/api/login?username={$USERNAME}&password={$PASSWORD}" -k -o /dev/null
-
-# Check response header. Anything other than HTTP/1.1 200 OK in the first line is an error
-RESPONSE=$(cat $HEADER | head -1 | awk '{print $2}')
-if [[ ! "$RESPONSE" == "200" ]]; then
-    echo "2 \"Backbox Backups\" - API login not successful (Http code: $RESPONSE)!"
+# Extract auth token, strip CR that comes with HTTP headers
+TOKEN=$(awk '/^AUTH:/ {print $2; exit}' "$HEADER" | tr -d '\r')
+if [[ -z "$TOKEN" ]]; then
+    echo "2 $SERVICE - Could not extract auth token"
     exit 1
 fi
 
-# Extract auth token from response header
-TOKEN=$(cat $HEADER | grep AUTH | awk '{print $2}')
-rm $HEADER
-
-# Get json structure containing overall backup status
+# Fetch backup status
 COMMAND="dashboard/backupStatus"
-RESPONSE=$(curl -o $OUTPUT -w "%{http_code}\n" -X GET -k --silent -H "Accept: application/json" -H "AUTH:$TOKEN" "https://$BACKBOX/rest/data/token/api/$COMMAND")
+API_CODE=$(curl -s -k --max-time "$CURL_TIMEOUT" -o "$OUTPUT" -w '%{http_code}' \
+    -X GET -H "Accept: application/json" -H "AUTH:$TOKEN" \
+    "https://$BACKBOX/rest/data/token/api/$COMMAND")
 
-if [[ ! "$RESPONSE" == "200" ]]; then
-    echo "2 \"Backbox Backups\" - API request not successful (Http code: $RESPONSE)!"
+if [[ "$API_CODE" != "200" ]]; then
+    echo "2 $SERVICE - API request not successful (HTTP code: $API_CODE)!"
     exit 1
 fi
 
-# Grab total and success from json
-SUCCESS=$(jq '.[]|."successDevices"' $OUTPUT)
-TOTAL=$(jq '.[]|."totalDevices"' $OUTPUT)
+# Extract both values in a single jq call; validate before arithmetic
+read -r SUCCESS TOTAL < <(jq -r '.[] | "\(.successDevices) \(.totalDevices)"' "$OUTPUT" 2>/dev/null)
+if [[ ! "$SUCCESS" =~ ^[0-9]+$ ]] || [[ ! "$TOTAL" =~ ^[0-9]+$ ]]; then
+    echo "2 $SERVICE - Unexpected API response (cannot parse success/total)"
+    exit 1
+fi
 
 # Output section
-if [[ $SUCCESS -eq 0 ]]; then
-    echo "2 \"Backbox Backups\" - No successful backups at all!"
+if [[ $TOTAL -eq 0 ]]; then
+    echo "1 $SERVICE - No backup devices configured"
+elif [[ $SUCCESS -eq 0 ]]; then
+    echo "2 $SERVICE - No successful backups at all ($SUCCESS/$TOTAL)!"
+elif [[ $SUCCESS -eq $TOTAL ]]; then
+    echo "0 $SERVICE - All $TOTAL backups successful"
 else
-    if [[ $SUCCESS -eq $TOTAL ]]; then
-        echo "0 \"Backbox Backups\" - All backups successful."
-    else
-        echo "1 \"Backbox Backups\" - Some backups failed - investigate!"
-    fi
+    echo "1 $SERVICE - $((TOTAL-SUCCESS)) of $TOTAL backups failed - investigate!"
 fi
