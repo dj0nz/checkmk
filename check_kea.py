@@ -68,6 +68,7 @@ def write_state(content):
     try:
         with os.fdopen(fd, "w") as f:
             f.write(content + "\n")
+        os.chmod(tmp_path, 0o644)
         os.replace(tmp_path, STATE_FILE)
     except Exception:
         os.unlink(tmp_path)
