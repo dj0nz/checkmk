@@ -8,6 +8,10 @@ CACHE_FILE="/var/run/kea.state"
 MAX_AGE=900
 
 if [[ -f $CACHE_FILE ]]; then
+    if [[ ! -r $CACHE_FILE ]]; then
+        echo "UNKNOWN - Cache file exists but is not readable"
+        exit 2
+    fi
     FILE_AGE=$(($(date +%s) - $(stat -c %Y $CACHE_FILE)))
     if [[ $FILE_AGE -gt $MAX_AGE ]]; then
         echo "WARNING - Cache file older than 15 minutes"
