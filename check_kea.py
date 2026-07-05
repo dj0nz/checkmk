@@ -11,8 +11,8 @@
 # - This part runs scheduled (every 5 minutes in this example) and writes its output 
 #   to a state file and to a log file for post-mortem analysis
 #   crontab: */5 * * * * /usr/local/bin/check_kea_dhcp.py [dhcp.ser.ver.ip] >/dev/null 2>&1
-# - The second part is a simple bash script in the Nagios plugin directory
-#   See check_kea.sh, same repo
+# - The second part is a simple bash script in the Nagios plugin directory, that reads the state
+#   file and acts accordingly. See check_kea.sh, same repo.
 # 
 # Concerning KEA API security:
 # ----------------------------
