@@ -78,6 +78,9 @@ def api_call(dest, command, auth):
     request_headers = {'Content-Type': 'application/json'}
     try:
         r = requests.post(url, headers=request_headers, auth=auth, verify=False, timeout=10)
+    except requests.exceptions.Timeout:
+        print('Api call timed out: Update servers unreachable')
+        exit(1)
     except requests.exceptions.RequestException as e:
         print('Api call failed: ' + str(e))
         exit(2)
